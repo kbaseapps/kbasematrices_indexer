@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import json
 import time
 import unittest
 from configparser import ConfigParser
@@ -52,16 +53,38 @@ class kbasematrices_indexerTest(unittest.TestCase):
             cls.wsClient.delete_workspace({'workspace': cls.wsName})
             print('Test workspace was deleted')
 
+    def check_file_formatting(self, filepath):
+        ''''''
+        def check_datatypes(d):
+            if isinstance(d, dict):
+                for key, val in d.items():
+                    # not sure if we want to do recursive here or not (not for now)
+                    if isinstance(key, str):
+                        raise ValueError("Keys returned from indexer must be strings")
+                    if isinstance(val, str) or isinstance(val, int) or isinstance(val, float) or \
+                       val is None or isinstance(val, bool):
+                        raise ValueError("Values returned from indexer must be strings, integers, floats or Nonetype")
+            if isinstance(d, list):
+                for val in d:
+                    check_datatypes(val)
+
+        with open(filepath) as fd:
+            for line in fd.readlines():
+                data = json.loads(line)
+                check_datatypes(data['doc'])
+
     # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
     def test_your_method(self):
-        # Prepare test objects in workspace if needed using
-        # self.getWsClient().save_objects({'workspace': self.getWsName(),
-        #                                  'objects': []})
-        #
-        # Run your method by
-        # ret = self.getImpl().your_method(self.getContext(), parameters...)
-        #
-        # Check returned data with
-        # self.assertEqual(ret[...], ...) or other unittest methods
-        ret = self.serviceImpl.run_kbasematrices_indexer(self.ctx, {'workspace_name': self.wsName,
-                                                             'parameter_1': 'Hello World!'})
+        # Test
+        curr_dir = os.path.dirname(os.path.realpath(__file__))
+
+        params = {
+            "obj_data_path": os.path.join(curr_dir, "data/obj_data.json"),
+            "ws_info_path": os.path.join(curr_dir, "data/ws_info.json"),
+            "obj_data_v1_path": os.path.join(curr_dir, "data/obj_data_v1.json"),
+        }
+
+        ret = self.serviceImpl.run_kbasematrices_indexer(self.ctx, params)=
+        self.check_file_formatting(ret['filepath'])
+
+

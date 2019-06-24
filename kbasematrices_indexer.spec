@@ -11,7 +11,7 @@ module kbasematrices_indexer {
     	string obj_data_path;
     	string ws_info_path;
     	string obj_data_v1_path;
-    } indexerInput
+    } indexerInput;
 
     /*
         This example function accepts any number of parameters and returns results in a KBaseReport
