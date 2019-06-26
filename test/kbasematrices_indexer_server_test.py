@@ -53,20 +53,19 @@ class kbasematrices_indexerTest(unittest.TestCase):
             cls.wsClient.delete_workspace({'workspace': cls.wsName})
             print('Test workspace was deleted')
 
-    def check_file_formatting(self, filepath):
+    def _check_file_formatting(self, filepath):
         ''''''
         def check_datatypes(d):
             if isinstance(d, dict):
                 for key, val in d.items():
-                    # not sure if we want to do recursive here or not (not for now)
-                    if isinstance(key, str):
-                        raise ValueError("Keys returned from indexer must be strings")
-                    if isinstance(val, str) or isinstance(val, int) or isinstance(val, float) or \
-                       val is None or isinstance(val, bool):
-                        raise ValueError("Values returned from indexer must be strings, integers, floats or Nonetype")
-            if isinstance(d, list):
+                    self.assertTrue(isinstance(key, str))
+                    check_datatypes(val)
+            elif isinstance(d, list):
                 for val in d:
                     check_datatypes(val)
+            else:
+                self.assertTrue(isinstance(d, str) or isinstance(d, int) or \
+                    isinstance(d, float) or d is None or isinstance(d, bool))
 
         with open(filepath) as fd:
             for line in fd.readlines():
@@ -74,8 +73,9 @@ class kbasematrices_indexerTest(unittest.TestCase):
                 check_datatypes(data['doc'])
 
     # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
+    @unittest.skip('x')
     def test_your_method(self):
-        # Test
+        # Template for test from file.
         curr_dir = os.path.dirname(os.path.realpath(__file__))
 
         params = {
@@ -84,7 +84,30 @@ class kbasematrices_indexerTest(unittest.TestCase):
             "obj_data_v1_path": os.path.join(curr_dir, "data/obj_data_v1.json"),
         }
 
-        ret = self.serviceImpl.run_kbasematrices_indexer(self.ctx, params)=
-        self.check_file_formatting(ret['filepath'])
+        ret = self.serviceImpl.run_kbasematrices_indexer(self.ctx, params)[0]
+        self._check_file_formatting(ret['filepath'])
+
+    def test_from_upa_Trait_Matrix(self):
+        """"""
+        # get the data for the object we want
+        upa = "30343/3/1"
+        obj = self.wsClient.get_objects2({'objects': [{'ref': upa}]})
+        obj_data = obj['data'][0]
+        obj_data_path = os.path.join(self.scratch, 'obj_data.json')
+        with open(obj_data_path, 'w') as fd:
+            fd.write(json.dumps(obj_data))
+
+        ws_info = self.wsClient.get_workspace_info({'id': 29120})
+        ws_info_path = os.path.join(self.scratch, 'ws_info.json')
+        with open(ws_info_path, 'w') as fd:
+            fd.write(json.dumps(ws_info))
+
+        params = {
+            'obj_data_path': obj_data_path,
+            'ws_info_path': ws_info_path,
+            'obj_data_v1_path': obj_data_path
+        }
+        ret = self.serviceImpl.run_kbasematrices_indexer(self.ctx, params)[0]
+        self._check_file_formatting(ret['filepath'])
 
 
